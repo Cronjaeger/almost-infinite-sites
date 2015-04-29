@@ -33,11 +33,15 @@ countNonPlantedTrees <- function( q_max, K = 1 ){
   return(t_diff[2:q_max])
 }
 
-generateTable1 <- function( q_max = 15, K = 1 ){
+generateTable1 <- function( q_max = 15, K = 1 , filename = NA){
   require(package = "xtable") # package for outputting latex source code
   t <- computeT(q_max,K)
   t_planted <- c(1, t[1:(q_max-1)]*K^(1:(q_max - 1) > 1))
   dt <- data.frame("t" = t,"t_planted" = t_planted, "t_non-planted" = t - t_planted)
   xt <- xtable(dt)
-  print.xtable(x = xt)
+  if(is.na(filename)){
+    print.xtable(x = xt)
+  } else {
+    print.xtable(xt,file = filename)
+  }
 }
