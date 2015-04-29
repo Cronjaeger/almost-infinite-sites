@@ -1,0 +1,8 @@
+Package: almostInfiniteSites
+Title: Tools for Almost-Infinite-Sites-Modell
+Version: 0.0.0.9000
+Authors@R: person("Mathias Christensen", "Cronjager", , "kitkat2.0@gmail.com", role = c("aut", "cre"))
+Description: Code for miniproject related to the almost-infinite-sites-modell.
+Depends: R (>= 3.2.0)
+License: GPLv2
+LazyData: true
