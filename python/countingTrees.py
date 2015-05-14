@@ -141,17 +141,17 @@ def t_np(n,l,L):
 #                        print "(j,m,d)=(%i,%i,%i)"%(j,m,d)
 
                     ## case: planted, planted
-                    for l2 in range(1, l//j + 1 +1):
-                        l1 = l + 1 - j * (l2 - 1)
+                    for l2 in range(1, (l - int(n-m == 1))//j + int(d != 1) +1):
+                        l1 = l + int(n-m != 1) - j * (l2 - int(d != 1))
                         for L1 in range(0, min(L, n-m-l1) +1 ):
-                            for L2 in range(L-L1,min(L, d-l2 +1)+1):
+                            for L2 in range(L-L1,min(L, d-l2 + int(d != 1) ) +1 ):
 #                                temp += 1
                                 temp += d * table_t_p[n-m][l1][L1] * table_t_s_p[d][l2][L2]
 #                                temp += d * binom(L,L2) * table_t_p[n-m][l1][L1] * table_t_s_p[d][l2][L2]
 
                     ## case: planted, non-planted
-                    for l2 in range(1, l//j+1):
-                        l1 = l + 1 - j * l2
+                    for l2 in range(1, (l - int(n-m == 1))//j+1):
+                        l1 = l + int(n-m != 1) - j * l2
                         for L1 in range(0,min(L,n-m-l1)+1):
                             for L2 in range(L-L1,min(L,d-l2)+1):
 #                                temp += 1
@@ -159,10 +159,10 @@ def t_np(n,l,L):
 #                                temp += d * binom(L,L2) * table_t_p[n-m][l1][L1] * table_t_s_np[d][l2][L2]
 
                     ## case: non-planted, planted
-                    for l2 in range(1, (l-1)//j + 1 +1):
-                        l1 = l - j * (l2 - 1)
+                    for l2 in range(1, (l-1)//j + int(d != 1) +1):
+                        l1 = l - j * (l2 - int(d != 1))
                         for L1 in range(0,min(L,n-m-l1 -1)+1):
-                            for L2 in range(L-L1,min(L,d-l2 +1)+1):
+                            for L2 in range(L-L1,min(L,d-l2 +int(d != 1))+1):
 #                                temp += 1
                                 temp += d * table_t_np[n-m][l1][L1] * table_t_s_p[d][l2][L2]
 #                                temp += d * binom(L,L2) * table_t_np[n-m][l1][L1] * table_t_s_p[d][l2][L2]
