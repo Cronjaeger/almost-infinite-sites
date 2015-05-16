@@ -1,39 +1,46 @@
 # -*- coding: utf-8 -*-
 
-#from itertools import product as cartesianProduct
 from scipy.misc import comb
 import numpy as np
 from math import sqrt
 
-""" When set to true, more output is printed at run-time in order to facilitete
- debugging. """
-verbose = False
+
+#==============================================================================
+# BEGIN VARIABLES
+#==============================================================================
+
+# Print extra output when running
+verbose = True # Print to terminal what is currently being compute
+veryVerbose = False # print every non-trivial result of applying t_np(n,l,L).
 
 #The maximum calue of n that we want to
 Nmax = 50L
 
 # What numeric value is used to represent that a value has not yet been
-# computed
+# computed.
 #NA = float("nan")
 NA = -1L
-def NAcheck(value):
-    #returns True if "value" corresponds to NA
-    return str(value) == str(NA)
 
-#==============================================================================
-# initialize a tables to store all values of T that have been computed so far.
+# initialize tables to store all values of recursions that have been computed
+# so far.
 #
 #  t_*[i][j][k] stores t(n = i,l = j, L = k).
-#  A ll values are initialized as nan indicates that these values have not been
+#
+#  All values are initialized as NA indicating that these values are yet to be
 #  computed
-#==============================================================================
-#t_table = [[[ nan for L in range(Nmax+1)] for l in range(Nmax+1)] for n in range(Nmax+1)]
-#table_t_p = np.array([[[ NA for L in range(Nmax+1)] for l in range(Nmax+1)] for n in range(Nmax+1)],ndmin=3)
 table_t_p = [[[ NA for L in range(Nmax+1)] for l in range(Nmax+1)] for n in range(Nmax+1)]
 table_t_np = [[[ NA for L in range(Nmax+1)] for l in range(Nmax+1)] for n in range(Nmax+1)]
 table_t_s_p = [[[ NA for L in range(Nmax+1)] for l in range(Nmax+1)] for n in range(Nmax+1)]
 table_t_s_np = [[[ NA for L in range(Nmax+1)] for l in range(Nmax+1)] for n in range(Nmax+1)]
 
+
+#==============================================================================
+# END VARIABLES
+#
+# BEGIN FUNCTIONS FOR PRINTING
+#==============================================================================
+
+#print all four tables to output for a fixed value of n
 def printTables(n):
     print "print np.matrix(table_t_p[%i])"%n
     print np.matrix(table_t_p[n] , dtype=long )
@@ -47,6 +54,8 @@ def printTables(n):
     print "\nprint np.matrix(table_t_s_np[%i])"%n
     print np.matrix(table_t_s_np[n] , dtype=long )
 
+# print a specific talbe (fixed n), formated as a latex-table.
+# Supports printing to files.
 def printTableLatex(n,planted=False,star=False,printToFile=False,path="./tables/LaTeX/"):
     if planted:
         if star:
@@ -93,12 +102,14 @@ def printTableLatex(n,planted=False,star=False,printToFile=False,path="./tables/
         f1.write(output)
         f1.close()
 
+# Print all tables to .tex files (stored in "./tables/LaTeX/")
 def generateTablesLatex():
     for i in range(1,n+1):
         for planted in (True,False):
             for star in (True,False):
                 printTableLatex(i,planted,star,printToFile=True,path = "./tables/LaTeX/")
 
+# Print all tables as .csv-files (stored in "./tables/csv/")
 def generateTablesCSV(path="./tables/csv/"):
     for i in range(1,Nmax+1):
         np.savetxt(path+"t_p__n_%i"%i, np.array(table_t_p[i]), delimiter=" , ")
@@ -107,12 +118,24 @@ def generateTablesCSV(path="./tables/csv/"):
         np.savetxt(path+"t_s_np__n_%i"%i, np.array(table_t_s_np[i]), delimiter=" , ")
 
 
+#==============================================================================
+# END PRINTING FUNCTIONS
+#
+# BEGIN AUXILIARY FUNCTIONS FOR RECURSIONS
+#==============================================================================
+
+#returns True if "value" corresponds to NA
+def NAcheck(value):
+    return str(value) == str(NA)
+
+# Verifies that only admissible values are passed to enumeration-recursion.
 def validateInput(n,l,L):
     if type(n) != long or type(l) != long or type(L) != long:
         raise  Exception("Input passed to t(n,l,L) must have type 'long'.")
     if min(n,l,L+1) < 1:
         raise Exception("Inputs passed to t(n,l,L) too small.")
 
+# Return a list of all divisors of n in ascending order, stored as longs
 def divisors(n):
     factors = set()
     for x in range(1, int(sqrt(n)) + 1):
@@ -121,22 +144,25 @@ def divisors(n):
             factors.add(long(n//x))
     return sorted(factors)
 
+#compute binomial coefficients (stored as longs)
 def binom(n,k):
     return long(comb(n,k,exact = True))
 
+#same as range(start,stop), but cast to long
 def lrange(start,stop):
     return map(long,range(start,stop))
+
+#==============================================================================
+# END AUXILIARY FUNCTIONS
+#
+# BEGIN RECURSIONS
+#==============================================================================
 
 def t_p(n,l,L):
 
     validateInput(n,l,L)
 
     if n>2 and n - l >= L and l>1:
-        if verbose and NAcheck(table_t_s_p[n-1][l][L]):
-            print "table_t_s_p[n-1][l][L] = NA at n,l,L = %i,%i,%i"%(n,l,L)
-        if verbose and str(table_t_s_np[n-1][l-1][L]) == str(NA):
-            print "table_t_s_np[n-1][l-1][L] = NA at n,l,L = %i,%i,%i"%(n,l,L)
-
         return table_t_s_p[n-1][l][L] + table_t_s_np[n-1][l-1][L]
 
     elif n==l and (n==1 or n==2) and L==0:
@@ -172,9 +198,6 @@ def t_s_np(n,l,L):
     if l < 2:
         return 0L
 
-#    if n==(l+1) and n>2 and L==1:
-#        return 1L
-
     elif n>2 and n - l >= L and L>0:
 
         result = L*(table_t_np[n][l][L] + table_t_np[n][l][L-1])
@@ -193,13 +216,7 @@ def t_np(n,l,L):
 
     validateInput(n,l,L)
 
-    if n < 3 or l < 2:
-        return 0L
-
-    elif n==l+1 and L==0:
-        return 1L
-
-    elif L+l>n-1:
+    if n < 3 or l < 2 or L+l>n-1:
         return 0L
 
     else:
@@ -210,66 +227,46 @@ def t_np(n,l,L):
                 if d != (n-1) :
 
                     j = m//d
-#                    if verbose and j == 0:
-#                        print "(j,m,d)=(%i,%i,%i)"%(j,m,d)
-
-#                    stop = False
-#                    if n==5 and l==2 and L==1:
-#                        stop = True
 
                     ## case: planted, planted
                     for l2 in range(1, l//j + int(d!=1) +1):
                         l1 = l + 1 - j * (l2 - int(d!=1))
-#                        if stop and m == 4 and d==2:
-#                            pass
                         for L1 in range(0, min(L, n-m-l1) +1 ):
                             for L2 in range(L-L1,min(L, d-l2 +int(d!=1))+1):
-#                                temp += 1
                                 temp += d * binom(L,L1) * binom(L1,L1+L2-L) * table_t_p[n-m][l1][L1] * table_t_s_p[d][l2][L2]
-#                                temp += d * binom(L,L2) * table_t_p[n-m][l1][L1] * table_t_s_p[d][l2][L2]
 
                     ## case: planted, non-planted
                     for l2 in range(1, l//j +1):
                         l1 = l + 1 - j * l2
                         for L1 in range(0,min(L,n-m-l1)+1):
                             for L2 in range(L-L1,min(L,d-l2)+1):
-#                                temp += 1
                                 temp += d * binom(L,L1) * binom(L1,L1+L2-L) * table_t_p[n-m][l1][L1] * table_t_s_np[d][l2][L2]
-#                                temp += d * binom(L,L2) * table_t_p[n-m][l1][L1] * table_t_s_np[d][l2][L2]
 
                     ## case: non-planted, planted
                     for l2 in range(1, (l-1)//j + int(d!=1) +1):
                         l1 = l - j * (l2 - int(d!=1))
                         for L1 in range(0,min(L,n-m-l1 -1)+1):
                             for L2 in range(L-L1,min(L,d-l2 +int(d!=1))+1):
-#                                temp += 1
                                 temp += d * binom(L,L1) * binom(L1,L1+L2-L) * table_t_np[n-m][l1][L1] * table_t_s_p[d][l2][L2]
-#                                temp += d * binom(L,L2) * table_t_np[n-m][l1][L1] * table_t_s_p[d][l2][L2]
 
                     ## case: non-planted, non-planted
                     for l2 in range(1, (l-1)//j +1):
                         l1 = l - j * l2
                         for L1 in range(0,min(L,n-m-l1-1)+1):
                             for L2 in range(L-L1,min(L, d-l2 )+1):
-#                                temp += 1
                                 temp += d * binom(L,L1) * binom(L1,L1+L2-L) * table_t_np[n-m][l1][L1] * table_t_s_np[d][l2][L2]
-#                                temp += d * binom(L,L2) * table_t_np[n-m][l1][L1] * table_t_s_np[d][l2][L2]
 
-        if verbose:
+        if veryVerbose:
             control = "t_np(%i,%i,%i) = %f"%(n,l,L,float(temp)/(n-1))
             print control
 
         temp = temp//(n-1)
         return temp
 
-
-#==============================================================================
-#  BEGIN: fill out tables.
-#==============================================================================
-
-def generateTable():
+def solveRecursionsIteratively():
     for n in lrange(1,Nmax+1):
-        print "Computing tables for n=%i ... "%n
+        if verbose:
+            print "Computing tables for n=%i ... "%n
         for L in lrange(0,Nmax+1):
 #            table_t_p[n][0][L] = 0L
 #            table_t_np[n][0][L] = 0L
@@ -289,64 +286,25 @@ def generateTable():
                 table_t_s_np[n][l][L] = t_s_np(n,l,L)
 
         if verbose:
-#            print "="*79
             print "n = %i"%n
             printTables(n)
             print "="*79+"\n"
 
 
-generateTable()
-print "Generating CSV-tables"
+#==============================================================================
+# END RECURSIONS
+#
+# BEGIN ACTUALLY COMPUTING STUFF (AND STORING OUTPUT)
+#==============================================================================
+
+if verbose:
+    print "Solving Recursions"
+solveRecursionsIteratively()
+
+if verbose:
+    print "Generating CSV-tables"
 generateTablesCSV()
-print "Generating LaTeX-tables"
+
+if verbose:
+    print "Generating LaTeX-tables"
 generateTablesLatex()
-
-#==============================================================================
-# BEGIN: setting initial values
-#==============================================================================
-#t_p[1][1][1] = 1L
-##t_np[1][1][1] = 0L
-#t_s_p[1][1][1] = 1L
-##t_s_np[1][1][1] = 0L
-#
-### L = 0 implies t_*(n,l,L) = 0
-#for n,l in cartesianProduct(range(1,Nmax+1),range(1,Nmax+1)):
-#    t_p[n][l][0] = 0L
-#    t_np[n][l][0] = 0L
-#    t_s_p[n][l][0] = 0L
-#    t_s_np[n][l][0] = 0L
-#
-### There are no non-planted trees with less than 3 nodes.
-#for n,l,L in cartesianProduct(range(1,3),range(1,Nmax+1),range(1,Nmax+1)):
-#    t_np[n][l][L] = 0L
-#    t_s_np[n][l][L] = 0L
-#
-#for L in range(1,Nmax +1):
-#    pass
-#
-#for n in range(1,Nmax+1):
-#    t_p[n][1][1] = 1L
-
-#==============================================================================
-# END: setting initial values
-#==============================================================================
-
-#==============================================================================
-# def t_p_recursion(n,l,L):
-#
-#     # Validate input
-#     if type(n) != long or type(l) != long or type(L) != long:
-#         raise  Exception("Input passed to t(n,l,L) must have type 'long'.")
-#     if min(n,l,L+1) < 1:
-#         raise Exception("Inputs passed to t(n,l,L) too small.")
-#
-#     #Handle base cases
-#     if max(l,L) > n or n - l < L:
-#         return 0L
-#     if n==1:
-#         if (l==1 and L==1):
-#             return 1L
-#         else:
-#             return 0L
-#
-#==============================================================================
