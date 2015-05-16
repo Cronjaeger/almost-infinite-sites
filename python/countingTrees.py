@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
 
-from itertools import product as cartesianProduct
+#from itertools import product as cartesianProduct
 from scipy.misc import comb
 import numpy as np
-from math import floor, sqrt
+from math import sqrt
 
 """ When set to true, more output is printed at run-time in order to facilitete
  debugging. """
-verbose = True
+verbose = False
 
 #The maximum calue of n that we want to
-Nmax = 10L
+Nmax = 40L
 
 # What numeric value is used to represent that a value has not yet been
 # computed
-NA = float("nan")
+#NA = float("nan")
+NA = -1L
 def NAcheck(value):
     #returns True if "value" corresponds to NA
     return str(value) == str(NA)
@@ -32,6 +33,79 @@ table_t_p = [[[ NA for L in range(Nmax+1)] for l in range(Nmax+1)] for n in rang
 table_t_np = [[[ NA for L in range(Nmax+1)] for l in range(Nmax+1)] for n in range(Nmax+1)]
 table_t_s_p = [[[ NA for L in range(Nmax+1)] for l in range(Nmax+1)] for n in range(Nmax+1)]
 table_t_s_np = [[[ NA for L in range(Nmax+1)] for l in range(Nmax+1)] for n in range(Nmax+1)]
+
+def printTables(n):
+    print "print np.matrix(table_t_p[%i])"%n
+    print np.matrix(table_t_p[n] , dtype=long )
+
+    print "\nprint np.matrix(table_t_np[%i])"%n
+    print np.matrix(table_t_np[n] , dtype=long )
+
+    print "\nprint np.matrix(table_t_s_p[%i])"%n
+    print np.matrix(table_t_s_p[n] , dtype=long )
+
+    print "\nprint np.matrix(table_t_s_np[%i])"%n
+    print np.matrix(table_t_s_np[n] , dtype=long )
+
+def printTableLatex(n,planted=False,star=False,printToFile=False,path="./tables/LaTeX/"):
+    if planted:
+        if star:
+            table = table_t_s_p
+            rowLabel = lambda l : r"$t^{p \, \star}_"+"{(%i,%i,\\Lp)}$"%(n,l)
+        else:
+            table = table_t_p
+            rowLabel = lambda l : r"$t^{p}_"+"{(%i,%i,\\Lp)}$"%(n,l)
+    else:
+        if star:
+            table = table_t_s_np
+            rowLabel = lambda l : r"$t^{\neg p \, \star}_"+"{(%i,%i,\\Lp)}$"%(n,l)
+        else:
+            table = table_t_np
+            rowLabel = lambda l : r"$t^{\neg p}_"+"{(%i,%i,\\Lp)}$"%(n,l)
+
+    output = "\\begin{tabular}{%s}\n  "%("r|"+"r"*(n+1),)
+    for s in [ " & \\Lp=%i"%L for L in range(0,n+1)]:
+        output += s
+    output += " \\\\\n  \\hline\n  "
+    for l in range(1,n+1):
+        output += rowLabel(l)
+        for s in [ " & $%i$"%table[n][l][L] for L in range(0,n+1)]:
+            output += s
+        output += " \\\\\n"
+        if l < n : output += "  "
+    output += "\\end{tabular}\n"
+
+    if not printToFile:
+        return output
+    else:
+        if planted:
+            if star:
+                filename = "table_t_s_p__n_is_%i.tex"%n
+            else:
+                filename = "table_t_p__n_is_%i.tex"%n
+        else:
+            if star:
+                filename = "table_t_s_np__n_is_%i.tex"%n
+            else:
+                filename = "table_t_np__n_is_%i.tex"%n
+
+        f1 = open(path+filename, "w")
+        f1.write(output)
+        f1.close()
+
+def generateTablesLatex():
+    for i in range(1,n+1):
+        for planted in (True,False):
+            for star in (True,False):
+                printTableLatex(i,planted,star,printToFile=True,path = "./tables/LaTeX/")
+
+def generateTablesCSV(path="./tables/csv/"):
+    for i in range(1,Nmax+1):
+        np.savetxt(path+"t_p__n_%i"%i, np.array(table_t_p[i]), delimiter=" , ")
+        np.savetxt(path+"t_np__n_%i"%i, np.array(table_t_np[i]), delimiter=" , ")
+        np.savetxt(path+"t_s_p__n_%i"%i, np.array(table_t_s_p[i]), delimiter=" , ")
+        np.savetxt(path+"t_s_np__n_%i"%i, np.array(table_t_s_np[i]), delimiter=" , ")
+
 
 def validateInput(n,l,L):
     if type(n) != long or type(l) != long or type(L) != long:
@@ -53,8 +127,6 @@ def binom(n,k):
 def lrange(start,stop):
     return map(long,range(start,stop))
 
-
-
 def t_p(n,l,L):
 
     validateInput(n,l,L)
@@ -64,6 +136,7 @@ def t_p(n,l,L):
             print "table_t_s_p[n-1][l][L] = NA at n,l,L = %i,%i,%i"%(n,l,L)
         if verbose and str(table_t_s_np[n-1][l-1][L]) == str(NA):
             print "table_t_s_np[n-1][l-1][L] = NA at n,l,L = %i,%i,%i"%(n,l,L)
+
         return table_t_s_p[n-1][l][L] + table_t_s_np[n-1][l-1][L]
 
     elif n==l and (n==1 or n==2) and L==0:
@@ -99,8 +172,8 @@ def t_s_np(n,l,L):
     if l < 2:
         return 0L
 
-    if n==(l+1) and n>2 and L==0:
-        return 1L
+#    if n==(l+1) and n>2 and L==1:
+#        return 1L
 
     elif n>2 and n - l >= L and L>0:
 
@@ -140,31 +213,37 @@ def t_np(n,l,L):
 #                    if verbose and j == 0:
 #                        print "(j,m,d)=(%i,%i,%i)"%(j,m,d)
 
+#                    stop = False
+#                    if n==5 and l==2 and L==1:
+#                        stop = True
+
                     ## case: planted, planted
-                    for l2 in range(1, (l - int(n-m == 1))//j + int(d != 1) +1):
-                        l1 = l + int(n-m != 1) - j * (l2 - int(d != 1))
+                    for l2 in range(1, l//j + int(d!=1) +1):
+                        l1 = l + 1 - j * (l2 - int(d!=1))
+#                        if stop and m == 4 and d==2:
+#                            pass
                         for L1 in range(0, min(L, n-m-l1) +1 ):
-                            for L2 in range(L-L1,min(L, d-l2 + int(d != 1) ) +1 ):
+                            for L2 in range(L-L1,min(L, d-l2 +int(d!=1))+1):
 #                                temp += 1
-                                temp += d * table_t_p[n-m][l1][L1] * table_t_s_p[d][l2][L2]
+                                temp += d * binom(L,L1) * binom(L1,L1+L2-L) * table_t_p[n-m][l1][L1] * table_t_s_p[d][l2][L2]
 #                                temp += d * binom(L,L2) * table_t_p[n-m][l1][L1] * table_t_s_p[d][l2][L2]
 
                     ## case: planted, non-planted
-                    for l2 in range(1, (l - int(n-m == 1))//j+1):
-                        l1 = l + int(n-m != 1) - j * l2
+                    for l2 in range(1, l//j +1):
+                        l1 = l + 1 - j * l2
                         for L1 in range(0,min(L,n-m-l1)+1):
                             for L2 in range(L-L1,min(L,d-l2)+1):
 #                                temp += 1
-                                temp += d * table_t_p[n-m][l1][L1] * table_t_s_np[d][l2][L2]
+                                temp += d * binom(L,L1) * binom(L1,L1+L2-L) * table_t_p[n-m][l1][L1] * table_t_s_np[d][l2][L2]
 #                                temp += d * binom(L,L2) * table_t_p[n-m][l1][L1] * table_t_s_np[d][l2][L2]
 
                     ## case: non-planted, planted
-                    for l2 in range(1, (l-1)//j + int(d != 1) +1):
-                        l1 = l - j * (l2 - int(d != 1))
+                    for l2 in range(1, (l-1)//j + int(d!=1) +1):
+                        l1 = l - j * (l2 - int(d!=1))
                         for L1 in range(0,min(L,n-m-l1 -1)+1):
-                            for L2 in range(L-L1,min(L,d-l2 +int(d != 1))+1):
+                            for L2 in range(L-L1,min(L,d-l2 +int(d!=1))+1):
 #                                temp += 1
-                                temp += d * table_t_np[n-m][l1][L1] * table_t_s_p[d][l2][L2]
+                                temp += d * binom(L,L1) * binom(L1,L1+L2-L) * table_t_np[n-m][l1][L1] * table_t_s_p[d][l2][L2]
 #                                temp += d * binom(L,L2) * table_t_np[n-m][l1][L1] * table_t_s_p[d][l2][L2]
 
                     ## case: non-planted, non-planted
@@ -173,7 +252,7 @@ def t_np(n,l,L):
                         for L1 in range(0,min(L,n-m-l1-1)+1):
                             for L2 in range(L-L1,min(L, d-l2 )+1):
 #                                temp += 1
-                                temp += d * table_t_np[n-m][l1][L1] * table_t_s_np[d][l2][L2]
+                                temp += d * binom(L,L1) * binom(L1,L1+L2-L) * table_t_np[n-m][l1][L1] * table_t_s_np[d][l2][L2]
 #                                temp += d * binom(L,L2) * table_t_np[n-m][l1][L1] * table_t_s_np[d][l2][L2]
 
         if verbose:
@@ -190,14 +269,18 @@ def t_np(n,l,L):
 
 def generateTable():
     for n in lrange(1,Nmax+1):
+        print "Computing tables for n=%i ... "%n
         for L in lrange(0,Nmax+1):
 #            table_t_p[n][0][L] = 0L
 #            table_t_np[n][0][L] = 0L
             for l in lrange(1,Nmax+1):
+
 #                print (n,l,L)
 #                print (table_t_p[n][l][L],table_t_np[n][l][L])
+
                 table_t_p[n][l][L] = t_p(n,l,L)
                 table_t_np[n][l][L] = t_np(n,l,L)
+
 #                print (table_t_p[n][l][L],table_t_np[n][l][L])
 #                print ""
         for L in lrange(0,Nmax+1):
@@ -205,7 +288,19 @@ def generateTable():
                 table_t_s_p[n][l][L] = t_s_p(n,l,L)
                 table_t_s_np[n][l][L] = t_s_np(n,l,L)
 
+        if verbose:
+#            print "="*79
+            print "n = %i"%n
+            printTables(n)
+            print "="*79+"\n"
+
+
 generateTable()
+print "Generating CSV-tables"
+generateTablesCSV()
+print "Generating LaTeX-tables"
+generateTablesLatex()
+
 #==============================================================================
 # BEGIN: setting initial values
 #==============================================================================
