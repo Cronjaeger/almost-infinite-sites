@@ -10,7 +10,7 @@ from math import sqrt
 verbose = False
 
 #The maximum calue of n that we want to
-Nmax = 40L
+Nmax = 50L
 
 # What numeric value is used to represent that a value has not yet been
 # computed
